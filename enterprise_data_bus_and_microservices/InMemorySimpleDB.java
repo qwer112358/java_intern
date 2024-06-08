@@ -1,49 +1,52 @@
-import java.util.HashMap;
-import java.util.Map;
+import java.util.TreeMap;
 
 public class InMemorySimpleDB {
-    private Map<Long, Record> data = new HashMap<>();
+    private TreeMap<Long, Record> accountIndex = new TreeMap<>();
+    private TreeMap<String, Record> nameIndex = new TreeMap<>(); 
+    private TreeMap<Double, Record> valueIndex = new TreeMap<>(); 
+
 
     public void addRecord(Record record) {
-        long account = record.getAccount();
-        data.put(account,record);
+        accountIndex.put(record.getAccount(), record);
+        nameIndex.put(record.getName(), record);
+        valueIndex.put(record.getValue(), record);
     }
 
     public void deleteRecord(long account) {
-        data.remove(account);
+        Record record = accountIndex.remove(account);
+        if (record != null) {
+            nameIndex.remove(record.getName());
+            valueIndex.remove(record.getValue());
+        }
     }
 
     public void updateRecord(Record record) {
-        long account = record.getAccount();
-        if (data.containsKey(account)) {
-            data.put(account,record);
+        Record existingRecord = accountIndex.get(record.getAccount());
+        if (existingRecord != null) {
+            nameIndex.remove(existingRecord.getName());
+            valueIndex.remove(existingRecord.getValue());
         }
+
+        accountIndex.put(record.getAccount(), record);
+        nameIndex.put(record.getName(), record);
+        valueIndex.put(record.getValue(), record);
     }
 
     public Record getRecord(String key, String value) {
-        if ("account".equals(key)) {
-            long account = Long.parseLong(value);
-            if (data.containsKey(account)) {
-                return data.get(account);
-            }
-        } else if ("name".equals(key)) {
-            for (Record record : data.values()) {
-                if (record.getName().equals(value)) {
-                    return record;
-                }
-            }
-        } else if ("value".equals(key)) {
-            for (Record record: data.values()) {
-                if (record.getValue() == Double.parseDouble(value))
-                    return record;
-            }
+        switch (key) {
+            case "account":
+                long account = Long.parseLong(value);
+                return accountIndex.get(account);
+            case "name":
+                return nameIndex.get(value); 
+            case "value":
+                double doubleValue = Double.parseDouble(value);
+                return valueIndex.get(doubleValue);
+            default:
+                return null;
         }
-        return null;
     }
 
-    public Map<Long, Record> getData() {
-        return data;
-    }
 
     static class Record {
         private Long account;
@@ -92,12 +95,36 @@ public class InMemorySimpleDB {
        
     public static void main(String[] args) {
         InMemorySimpleDB db = new InMemorySimpleDB();
+
+        // Добавление записей
         Record record1 = new Record(234678L, "Иванов Иван Иванович", 2035.34);
         Record record2 = new Record(4112221L, "Алексеев Алексей Алексеевич", 2024.08);
+        Record record3 = new Record(987654L, "Сидоров Сидор Сидорович", 1500.50);
         db.addRecord(record1);
         db.addRecord(record2);
+        db.addRecord(record3);
+
+        // Поиск по разным полям
+        System.out.println("\nПоиск по полю name:");
         System.out.println(db.getRecord("name", "Иванов Иван Иванович"));
+
+        System.out.println("\nПоиск по полю value:");
         System.out.println(db.getRecord("value", "2024.08"));
-        System.out.println(db.getData().values());
+
+        System.out.println("\nПоиск по полю account:");
+        System.out.println(db.getRecord("account", "987654"));
+
+        // Изменение записи
+        record3.setValue(3000.00);
+        db.updateRecord(record3);
+        System.out.println("\nЗапись после изменения:");
+        System.out.println(db.getRecord("account", "987654"));
+
+        // Удаление записи
+        db.deleteRecord(4112221L);
+        System.out.println("\nВсе записи после удаления:");
+        for (Record record : db.accountIndex.values()) {
+            System.out.println(record);
+        }
     }
 }
