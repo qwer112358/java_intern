@@ -5,7 +5,6 @@ public class InMemorySimpleDB {
     private TreeMap<String, Record> nameIndex = new TreeMap<>(); 
     private TreeMap<Double, Record> valueIndex = new TreeMap<>(); 
 
-
     public void addRecord(Record record) {
         accountIndex.put(record.getAccount(), record);
         nameIndex.put(record.getName(), record);
